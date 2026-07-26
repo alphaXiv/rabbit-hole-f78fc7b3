@@ -1,7 +1,7 @@
 {
-  "name": "efm2_seed0",
-  "method": "expanding",
-  "seed": 0,
+  "name": "fixed_map2_seed1",
+  "method": "fixed",
+  "seed": 1,
   "train_size": 20000,
   "valid_size": 2000,
   "test_size": 2000,
@@ -13,7 +13,7 @@
   "heads": 8,
   "eval_samples": 10000,
   "eval_steps": [2],
-  "insertion": "learned",
+  "insertion": "none",
   "distill": true,
   "distill_steps": 10000
 }
