@@ -56,10 +56,11 @@ def setup_dist() -> tuple[int, int, int, torch.device]:
     rank = int(os.environ.get("RANK", "0"))
     world = int(os.environ.get("WORLD_SIZE", "1"))
     local = int(os.environ.get("LOCAL_RANK", "0"))
-    if world > 1:
-        dist.init_process_group("nccl")
     torch.cuda.set_device(local)
-    return rank, world, local, torch.device(f"cuda:{local}")
+    device = torch.device(f"cuda:{local}")
+    if world > 1:
+        dist.init_process_group("nccl", device_id=device)
+    return rank, world, local, device
 
 
 def download_qm9() -> Path:
