@@ -97,29 +97,41 @@ def smiles_to_graph(smiles: str) -> tuple[np.ndarray, np.ndarray, int] | None:
 def load_split(cfg: dict) -> tuple[dict[str, torch.Tensor], list[str]]:
     path = download_qm9()
     total = cfg["train_size"] + cfg["valid_size"] + cfg["test_size"]
-    records: list[tuple[np.ndarray, np.ndarray, int, str]] = []
-    with path.open(newline="") as f:
-        reader = csv.DictReader(f)
-        smiles_key = "smiles"
-        for row in reader:
-            parsed = smiles_to_graph(row[smiles_key])
-            if parsed is not None:
-                nodes, edges, n = parsed
-                can = Chem.MolToSmiles(Chem.MolFromSmiles(row[smiles_key]), canonical=True)
-                records.append((nodes, edges, n, can))
-    rng = random.Random(20260726)
-    rng.shuffle(records)
-    records = records[:total]
-    nodes = torch.from_numpy(np.stack([r[0] for r in records]))
-    edges = torch.from_numpy(np.stack([r[1] for r in records]))
-    counts = torch.tensor([r[2] for r in records], dtype=torch.long)
+    cache = path.parent / f"graphs-{total}-20260726.npz"
+    if rank0() and not cache.exists():
+        records: list[tuple[np.ndarray, np.ndarray, int, str]] = []
+        with path.open(newline="") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                parsed = smiles_to_graph(row["smiles"])
+                if parsed is not None:
+                    nodes, edges, n = parsed
+                    can = Chem.MolToSmiles(Chem.MolFromSmiles(row["smiles"]), canonical=True)
+                    records.append((nodes, edges, n, can))
+        rng = random.Random(20260726)
+        rng.shuffle(records)
+        records = records[:total]
+        np.savez_compressed(
+            cache,
+            nodes=np.stack([r[0] for r in records]),
+            edges=np.stack([r[1] for r in records]),
+            counts=np.asarray([r[2] for r in records], dtype=np.int64),
+            smiles=np.asarray([r[3] for r in records]),
+        )
+    if dist.is_initialized():
+        dist.barrier()
+    packed = np.load(cache)
+    nodes = torch.from_numpy(packed["nodes"])
+    edges = torch.from_numpy(packed["edges"])
+    counts = torch.from_numpy(packed["counts"])
+    smiles = packed["smiles"].tolist()
     start = cfg["train_size"] + cfg["valid_size"]
     log(
         f"DATA source=public_QM9 rows={len(records)} split="
         f"{cfg['train_size']}/{cfg['valid_size']}/{cfg['test_size']} "
         f"sha256={hashlib.sha256(path.read_bytes()).hexdigest()[:16]}"
     )
-    return {"nodes": nodes, "edges": edges, "counts": counts}, [r[3] for r in records[start:]]
+    return {"nodes": nodes, "edges": edges, "counts": counts}, smiles[start:]
 
 
 class GraphBlock(nn.Module):
