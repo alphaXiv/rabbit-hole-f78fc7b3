@@ -127,7 +127,7 @@ def load_split(cfg: dict) -> tuple[dict[str, torch.Tensor], list[str]]:
     smiles = packed["smiles"].tolist()
     start = cfg["train_size"] + cfg["valid_size"]
     log(
-        f"DATA source=public_QM9 rows={len(records)} split="
+        f"DATA source=public_QM9 rows={len(nodes)} split="
         f"{cfg['train_size']}/{cfg['valid_size']}/{cfg['test_size']} "
         f"sha256={hashlib.sha256(path.read_bytes()).hexdigest()[:16]}"
     )
