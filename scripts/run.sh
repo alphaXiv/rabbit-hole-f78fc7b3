@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-python -m pip install --quiet --no-cache-dir -r requirements.txt
+python -m pip install --quiet --no-cache-dir --break-system-packages -r requirements.txt
 
 export OMP_NUM_THREADS=4
 export PYTHONUNBUFFERED=1
