@@ -1,0 +1,18 @@
+{
+  "name": "scaffold",
+  "method": "expanding",
+  "seed": 0,
+  "train_size": 20000,
+  "valid_size": 2000,
+  "test_size": 2000,
+  "train_steps": 30000,
+  "batch_size_per_gpu": 128,
+  "learning_rate": 0.0003,
+  "hidden_dim": 256,
+  "layers": 6,
+  "heads": 8,
+  "eval_samples": 10000,
+  "eval_steps": [4, 10],
+  "insertion": "learned",
+  "distill": false
+}

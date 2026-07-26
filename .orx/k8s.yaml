@@ -1,0 +1,28 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: efm-{{ORX_RUN}}
+spec:
+  backoffLimit: 0
+  activeDeadlineSeconds: 39600
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: run
+          image: pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime
+          command: ["bash", "-c", "$ORX_SCRIPT"]
+          env:
+            - name: TORCH_HOME
+              value: /tmp/torch
+            - name: HF_HOME
+              value: /tmp/huggingface
+          resources:
+            requests:
+              nvidia.com/gpu: "4"
+              cpu: "24"
+              memory: "96Gi"
+            limits:
+              nvidia.com/gpu: "4"
+              cpu: "24"
+              memory: "96Gi"

@@ -1,3 +1,20 @@
+# Expanding Flow Maps — QM9 reproduction
+
+This public repository is being repurposed for a fresh, claim-by-claim
+reproduction of *Expanding Flow Maps* (arXiv:2607.21585). The formal evidence
+comes only from Kubernetes runs launched after 2026-07-26T04:05:41.569Z.
+
+The implementation retains the public QM9 task, learned node insertion,
+per-node local times, noisy categorical node/edge states, matched fixed-canvas
+controls, RDKit validity and uniqueness, and public ChemNet FCD. It uses a
+reduced 20K/2K/2K split and a six-layer graph transformer.
+
+The prior repository content below is unrelated to the paper and is retained
+only as imported history; the reproduction code lives in `src/`, `configs/`,
+and `.orx/`.
+
+---
+
 # 🕳️ Rabbit Hole: AI-Powered Concept Visualizer
 Rabbit Hole is an AI-powered, full-stack concept visualizer that dynamically generates and infinitely expands interactive learning maps using Gemini AI and React Flow. Built on the MERN stack, it features secure JWT authentication, automated mathematical graph layouts, and MongoDB persistence to save and export customized research sessions.
 
