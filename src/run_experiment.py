@@ -56,10 +56,11 @@ def setup_dist() -> tuple[int, int, int, torch.device]:
     rank = int(os.environ.get("RANK", "0"))
     world = int(os.environ.get("WORLD_SIZE", "1"))
     local = int(os.environ.get("LOCAL_RANK", "0"))
-    if world > 1:
-        dist.init_process_group("nccl")
     torch.cuda.set_device(local)
-    return rank, world, local, torch.device(f"cuda:{local}")
+    device = torch.device(f"cuda:{local}")
+    if world > 1:
+        dist.init_process_group("nccl", device_id=device)
+    return rank, world, local, device
 
 
 def download_qm9() -> Path:
@@ -106,6 +107,8 @@ def load_split(cfg: dict) -> tuple[dict[str, torch.Tensor], list[str]]:
                 nodes, edges, n = parsed
                 can = Chem.MolToSmiles(Chem.MolFromSmiles(row[smiles_key]), canonical=True)
                 records.append((nodes, edges, n, can))
+                if len(records) >= total:
+                    break
     rng = random.Random(20260726)
     rng.shuffle(records)
     records = records[:total]
@@ -294,9 +297,15 @@ def train_model(cfg, data, device, rank, world, seed_offset=0):
         counts = data["counts"][ids]
         nodes, edges = permute_batch(nodes, edges, counts, cpu_gen)
         nodes, edges, counts = nodes.to(device), edges.to(device), counts.to(device)
+        if step == 1:
+            log("DEBUG_STAGE batch_on_device")
         opt.zero_grad(set_to_none=True)
         loss, parts = loss_batch(model, nodes, edges, counts, cfg, device, gen)
+        if step == 1:
+            log("DEBUG_STAGE forward_and_loss")
         loss.backward()
+        if step == 1:
+            log("DEBUG_STAGE backward")
         torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
         scale = min(1.0, step / warmup)
         for group in opt.param_groups:

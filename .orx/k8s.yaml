@@ -11,12 +11,14 @@ spec:
       containers:
         - name: run
           image: pytorch/pytorch:2.7.1-cuda12.8-cudnn9-runtime
-          command: ["bash", "-c", "$ORX_SCRIPT"]
+          command: ["bash", "-c", "eval \"$ORX_SCRIPT\""]
           env:
             - name: TORCH_HOME
               value: /tmp/torch
             - name: HF_HOME
               value: /tmp/huggingface
+            - name: CUDA_LAUNCH_BLOCKING
+              value: "1"
           resources:
             requests:
               nvidia.com/gpu: "4"
