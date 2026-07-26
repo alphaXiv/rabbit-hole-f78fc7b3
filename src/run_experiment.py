@@ -422,7 +422,9 @@ def graph_to_smiles(nodes: torch.Tensor, edges: torch.Tensor, count: int) -> str
 def calculate_fcd(generated: list[str], reference: list[str], device: str) -> float:
     try:
         from fcd_torch import FCD
-        metric = FCD(device=device, n_jobs=8, batch_size=512)
+        # RDKit objects do not cross Python 3.12 worker boundaries reliably in
+        # fcd_torch 1.0.7; in-process featurization is deterministic and public.
+        metric = FCD(device=device, n_jobs=0, batch_size=512)
         return float(metric(generated, reference))
     except Exception as exc:
         log(f"FCD_ERROR type={type(exc).__name__} message={str(exc)[:300]}")
