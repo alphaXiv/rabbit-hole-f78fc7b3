@@ -1,7 +1,7 @@
 {
-  "name": "efm2_insertion_disabled_seed0",
+  "name": "efm2_insertion_disabled_seed1",
   "method": "expanding",
-  "seed": 0,
+  "seed": 1,
   "train_size": 20000,
   "valid_size": 2000,
   "test_size": 2000,
