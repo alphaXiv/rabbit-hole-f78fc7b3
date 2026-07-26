@@ -1,7 +1,7 @@
 {
-  "name": "scaffold",
-  "method": "expanding",
-  "seed": 0,
+  "name": "fixed_seed1",
+  "method": "fixed",
+  "seed": 1,
   "train_size": 20000,
   "valid_size": 2000,
   "test_size": 2000,
@@ -13,6 +13,6 @@
   "heads": 8,
   "eval_samples": 10000,
   "eval_steps": [4, 10],
-  "insertion": "learned",
+  "insertion": "none",
   "distill": false
 }
