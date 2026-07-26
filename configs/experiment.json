@@ -1,5 +1,5 @@
 {
-  "name": "scaffold",
+  "name": "eflow_seed0",
   "method": "expanding",
   "seed": 0,
   "train_size": 20000,
