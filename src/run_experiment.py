@@ -330,6 +330,74 @@ def train_model(cfg, data, device, rank, world, seed_offset=0):
     return raw
 
 
+def distill_model(teacher, cfg, data, device, rank, world):
+    """Distill diagonal teacher predictions into a two-time flow-map student."""
+    teacher.eval()
+    for parameter in teacher.parameters():
+        parameter.requires_grad_(False)
+    student = GraphDenoiser(cfg).to(device)
+    student.load_state_dict(teacher.state_dict())
+    if world > 1:
+        student = DDP(student, device_ids=[device.index], find_unused_parameters=True)
+    opt = torch.optim.AdamW(student.parameters(), lr=cfg["learning_rate"], weight_decay=1e-12)
+    gen = torch.Generator(device=device).manual_seed(cfg["seed"] + 50021 + rank)
+    cpu_gen = torch.Generator().manual_seed(cfg["seed"] + 90001 + rank)
+    ntrain = cfg["train_size"]
+    start = time.time()
+    student.train()
+    for step in range(1, cfg["distill_steps"] + 1):
+        ids = torch.randint(0, ntrain, (cfg["batch_size_per_gpu"],), generator=cpu_gen)
+        nodes = data["nodes"][ids]
+        edges = data["edges"][ids]
+        counts = data["counts"][ids]
+        nodes, edges = permute_batch(nodes, edges, counts, cpu_gen)
+        nodes, edges, counts = nodes.to(device), edges.to(device), counts.to(device)
+        source_t, active, local, xn, xe, present = make_training_state(
+            nodes, edges, counts, cfg["method"], device, gen
+        )
+        target_t = source_t + torch.rand(source_t.shape, device=device, generator=gen) * (
+            1 - source_t
+        )
+        with torch.no_grad():
+            tn, te, tc, tg = teacher(
+                xn, xe, active, local, source_t, source_t
+            )
+            tn, te, tc = torch.softmax(tn, -1), torch.softmax(te, -1), torch.softmax(tc, -1)
+        sn, se, sc, sg = student(xn, xe, active, local, source_t, target_t)
+        if cfg["method"] == "fixed":
+            node_mask = torch.ones_like(present)
+        else:
+            node_mask = active
+        edge_mask = node_mask[:, :, None] & node_mask[:, None, :]
+        edge_mask &= ~torch.eye(MAX_NODES, device=device, dtype=torch.bool)[None]
+        node_loss = -(tn[node_mask] * F.log_softmax(sn[node_mask], -1)).sum(-1).mean()
+        edge_loss = -(te[edge_mask] * F.log_softmax(se[edge_mask], -1)).sum(-1).mean()
+        count_loss = -(tc * F.log_softmax(sc, -1)).sum(-1).mean()
+        if cfg["method"] == "expanding":
+            gap_mask = active.clone()
+            gap_mask[~gap_mask.any(1), 0] = True
+            gap_loss = F.mse_loss(torch.log1p(sg[gap_mask]), torch.log1p(tg[gap_mask]))
+        else:
+            gap_loss = torch.zeros((), device=device)
+        loss = node_loss + 5.0 * edge_loss + 0.5 * count_loss + 0.2 * gap_loss
+        opt.zero_grad(set_to_none=True)
+        loss.backward()
+        torch.nn.utils.clip_grad_norm_(student.parameters(), 1.0)
+        opt.step()
+        if rank0() and (step == 1 or step % 500 == 0):
+            log(
+                f"DISTILL step={step}/{cfg['distill_steps']} loss={loss.item():.4f} "
+                f"node={node_loss.item():.4f} edge={edge_loss.item():.4f} "
+                f"count={count_loss.item():.4f} gap={gap_loss.item():.4f} "
+                f"samples_per_s={step * cfg['batch_size_per_gpu'] * world / (time.time()-start):.1f}"
+            )
+    raw = student.module if isinstance(student, DDP) else student
+    if world > 1:
+        for p in raw.parameters():
+            dist.broadcast(p.data, src=0)
+    return raw
+
+
 @torch.no_grad()
 def sample_graphs(model, cfg, steps, nsamples, device, insertion_mode=None):
     model.eval()
@@ -422,7 +490,7 @@ def graph_to_smiles(nodes: torch.Tensor, edges: torch.Tensor, count: int) -> str
 def calculate_fcd(generated: list[str], reference: list[str], device: str) -> float:
     try:
         from fcd_torch import FCD
-        metric = FCD(device=device, n_jobs=8, batch_size=512)
+        metric = FCD(device=device, n_jobs=0, batch_size=512)
         return float(metric(generated, reference))
     except Exception as exc:
         log(f"FCD_ERROR type={type(exc).__name__} message={str(exc)[:300]}")
@@ -494,6 +562,10 @@ def main():
     model = train_model(cfg, data, device, rank, world)
     if world > 1:
         dist.barrier()
+    if cfg.get("distill", False):
+        model = distill_model(model, cfg, data, device, rank, world)
+        if world > 1:
+            dist.barrier()
     if rank0():
         results = evaluate(model, cfg, reference, device)
         summary = {

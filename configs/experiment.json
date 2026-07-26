@@ -1,5 +1,5 @@
 {
-  "name": "scaffold",
+  "name": "efm2_seed0",
   "method": "expanding",
   "seed": 0,
   "train_size": 20000,
@@ -12,7 +12,8 @@
   "layers": 6,
   "heads": 8,
   "eval_samples": 10000,
-  "eval_steps": [4, 10],
+  "eval_steps": [2],
   "insertion": "learned",
-  "distill": false
+  "distill": true,
+  "distill_steps": 10000
 }
