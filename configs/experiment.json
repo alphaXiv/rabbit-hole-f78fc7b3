@@ -1,5 +1,5 @@
 {
-  "name": "fixed_seed0",
+  "name": "fixed_chemnet_seed0",
   "method": "fixed",
   "seed": 0,
   "train_size": 20000,
