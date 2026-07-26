@@ -1,5 +1,5 @@
 {
-  "name": "eflow_seed1",
+  "name": "eflow_chemnet_seed1",
   "method": "expanding",
   "seed": 1,
   "train_size": 20000,
