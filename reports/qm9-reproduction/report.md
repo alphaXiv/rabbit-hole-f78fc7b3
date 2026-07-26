@@ -10,9 +10,9 @@ Molecule generators must decide both what a molecule contains and how large it s
 
 **How to read this figure.** Thick lines are two-seed means and faint lines are individual seeds; every point evaluates 10,000 generated molecules. At four steps, expanding flow reached 89.7% validity versus 51.8% for fixed canvas, but only 24.4% of its valid molecules were unique versus 97.9%. More steps did not reverse that trade-off.
 
-[![Open in molab](https://marimo.io/molab-shield.svg)](https://molab.marimo.io/github/alphaXiv/rabbit-hole-f78fc7b3/blob/main/notebooks/expanding_flow_maps_qm9.py)
+[![Open in molab](https://marimo.io/molab-shield.svg)](https://molab.marimo.io/github/alphaXiv/rabbit-hole-f78fc7b3/blob/main/notebooks/qm9_reproduction.py)
 
-Molab opens the evidence-filled notebook directly: https://molab.marimo.io/github/alphaXiv/rabbit-hole-f78fc7b3/blob/main/notebooks/expanding_flow_maps_qm9.py
+Molab opens the evidence-filled notebook directly: https://molab.marimo.io/github/alphaXiv/rabbit-hole-f78fc7b3/blob/main/notebooks/qm9_reproduction.py
 
 ## What was tested
 
@@ -53,4 +53,4 @@ The main diagnostic is count collapse. Both distilled EFM seeds decoded every sa
 
 The reduced campaign supports the narrow mechanistic observation that an expanding representation can protect validity at very small step budgets. It does not support the stronger joint claim of validity **and** uniqueness, the two-step FCD advantage, or the claimed insertion mechanism under these substitutions. A full reproduction still needs the authors’ exact loss/time schedule, 100K training split, nine-layer model, two million updates, and broader seeds.
 
-All evidence ran on **Kubernetes** with **NVIDIA RTX PRO 6000 Blackwell** GPUs, peaking at **16 concurrent GPUs**. The fresh campaign’s actual elapsed wall time was **1.29 hours**, measured from the mandated evidence cutoff to the last terminal run; individual matched runs took about 8.8–12.1 minutes on four GPUs. Exact measurements and provenance are in `results/qm9_results.csv`; code-bearing branches are linked from the repository README.
+All evidence ran on **Kubernetes** with **NVIDIA RTX PRO 6000 Blackwell** GPUs, peaking at **16 concurrent GPUs**. The fresh campaign’s actual elapsed wall time was **1.178 hours**, from the first formal launch at 04:12:18 UTC to the last terminal run at 05:22:59 UTC; individual matched runs took about 8.8–12.1 minutes on four GPUs. Exact measurements and provenance are in `results/qm9_results.csv`; code-bearing branches are linked from the repository README.
