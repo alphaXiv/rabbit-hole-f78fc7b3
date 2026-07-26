@@ -1,17 +1,52 @@
-# Expanding Flow Maps — QM9 reproduction
+# Expanding Flow Maps — reduced-QM9 reproduction
 
-This public repository is being repurposed for a fresh, claim-by-claim
-reproduction of *Expanding Flow Maps* (arXiv:2607.21585). The formal evidence
-comes only from Kubernetes runs launched after 2026-07-26T04:05:41.569Z.
+[![Open in molab](https://marimo.io/molab-shield.svg)](https://molab.marimo.io/github/alphaXiv/rabbit-hole-f78fc7b3/blob/main/notebooks/qm9_reproduction.py)
 
-The implementation retains the public QM9 task, learned node insertion,
-per-node local times, noisy categorical node/edge states, matched fixed-canvas
-controls, RDKit validity and uniqueness, and public ChemNet FCD. It uses a
-reduced 20K/2K/2K split and a six-layer graph transformer.
+This public artifact tests the central molecule-generation claim from
+[*Expanding Flow Maps* (arXiv:2607.21585)](https://arxiv.org/abs/2607.21585):
+learned node insertion should remain effective at very small sampling-step
+budgets relative to a matched fixed canvas.
 
-The prior repository content below is unrelated to the paper and is retained
-only as imported history; the reproduction code lives in `src/`, `configs/`,
-and `.orx/`.
+**Assessment: partially reproduced.** At four steps, the paper reports fixed
+→ expanding validity of 53.6%→91.7%, uniqueness of 63.1%→92.8%, and FCD of
+3.008→1.780. We observe 51.8%→89.7% validity, but 97.9%→24.4% uniqueness and
+2.44→11.31 FCD. At two steps, the paper's FCD improves 0.49→0.40; ours worsens
+11.95→14.89. Disabling insertion improves our FCD further to 10.64, so only the
+low-step validity direction is supported.
+
+The bounded substitution keeps the named public QM9 task, RDKit metrics,
+ChemNet FCD, active-node local times, learned insertion, noisy categorical
+node/edge states, and a shared denoiser. It reduces the split from 100K to
+20K/2K/2K, uses two seeds, trains a six-layer width-256 transformer for 30,000
+steps, distills for 10,000 more, and evaluates 10,000 samples per condition.
+No author implementation was public.
+
+- [Illustrated report](reports/qm9-reproduction/report.md)
+- [Self-contained tutorial notebook](notebooks/qm9_reproduction.py)
+- [Machine-readable measurements](results/qm9_results.csv)
+- Exact Molab URL: https://molab.marimo.io/github/alphaXiv/rabbit-hole-f78fc7b3/blob/main/notebooks/qm9_reproduction.py
+
+Formal evidence used OpenResearch Kubernetes, four **NVIDIA RTX PRO 6000
+Blackwell** GPUs per run, **16 GPUs peak**, and **1.178 hours actual elapsed wall
+time** (2026-07-26 04:12:18–05:22:59 UTC).
+
+## Experiment log
+
+Every experiment inherited the exact command shown below from the frozen
+baseline. Seed links point to the immutable code that produced the result.
+
+| Branch / experiment | Purpose or change | Exact run command | Assessment / outcome | Compute |
+|---|---|---|---|---|
+| `main` | Public report, notebook, results, and reference implementation | Not run as an experiment (publication surface) | Presentation only | None |
+| [EFlow seed 0](https://github.com/alphaXiv/rabbit-hole-f78fc7b3/tree/orx/eflow-chemnet-recovery-seed-0), [seed 1](https://github.com/alphaXiv/rabbit-hole-f78fc7b3/tree/orx/eflow-chemnet-recovery-seed-1) | Learned insertion; 4/10-step ChemNet evaluation | `bash scripts/run.sh` | Validity 89.7%/86.5%; uniqueness 24.4%/35.7%; FCD 11.31/9.06 | 4 GPUs/run; 8.8–9.0 min |
+| [Fixed seed 0](https://github.com/alphaXiv/rabbit-hole-f78fc7b3/tree/orx/fixed-canvas-chemnet-recovery-seed-0), [seed 1](https://github.com/alphaXiv/rabbit-hole-f78fc7b3/tree/orx/fixed-canvas-chemnet-recovery-seed-1) | Matched fixed-canvas 4/10-step control | `bash scripts/run.sh` | Validity lower; uniqueness and FCD substantially better | 4 GPUs/run; 8.8–8.9 min |
+| [Two-step EFM seed 0](https://github.com/alphaXiv/rabbit-hole-f78fc7b3/tree/orx/distilled-two-step-efm-seed-0), [seed 1](https://github.com/alphaXiv/rabbit-hole-f78fc7b3/tree/orx/distilled-two-step-efm-seed-1) | Consistency-distilled learned-insertion map | `bash scripts/run.sh` | 92.0% validity, 13.7% uniqueness, FCD 14.89 | 4 GPUs/run; 12.0–12.1 min |
+| [Two-step fixed seed 0](https://github.com/alphaXiv/rabbit-hole-f78fc7b3/tree/orx/distilled-two-step-fixed-map-seed-0), [seed 1](https://github.com/alphaXiv/rabbit-hole-f78fc7b3/tree/orx/distilled-two-step-fixed-map-seed-1) | Compute-matched distilled fixed map | `bash scripts/run.sh` | 78.2% validity, 26.1% uniqueness, FCD 11.95 | 4 GPUs/run; 11.8–12.0 min |
+| [No-insertion seed 0](https://github.com/alphaXiv/rabbit-hole-f78fc7b3/tree/orx/distilled-two-step-insertion-disabled-ablation), [seed 1](https://github.com/alphaXiv/rabbit-hole-f78fc7b3/tree/orx/distilled-two-step-insertion-disabled-ablation-s) | Distilled EFM with all positions exposed immediately | `bash scripts/run.sh` | 86.9% validity, 34.9% uniqueness, FCD 10.64; claimed mechanism direction absent | 4 GPUs/run; 11.9–12.0 min |
+
+The prior Rabbit Hole application below is unrelated imported history. The
+reproduction implementation lives in `src/`, `configs/`, `scripts/`, and
+`.orx/`.
 
 ---
 
